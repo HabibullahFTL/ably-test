@@ -1,9 +1,19 @@
+import { setCookie } from '@/components/cookie';
 import dynamic from 'next/dynamic';
 import Head from 'next/head';
+import { useRouter } from 'next/router';
+import { useEffect } from 'react';
 
 const AblyChatComponent = dynamic(() => import('../components/AblyChatComponent'), { ssr: false });
 
 export default function Home() {
+  const router = useRouter();
+
+  useEffect(() => {
+    if (router?.query?.userId && router?.isReady) {
+      setCookie('test-user-id', router?.query?.userId, 4)
+    }
+  }, [router?.query?.userId])
   return (
     <div className="container">
       <Head>
@@ -13,7 +23,7 @@ export default function Home() {
 
       <main>
         <h1 className="title">Next.js Chat Demo</h1>
-        <AblyChatComponent />
+        {router?.isReady ? <AblyChatComponent /> : null}
       </main>
 
       <footer>

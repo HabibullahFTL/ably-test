@@ -1,8 +1,11 @@
+import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import styles from './AblyChatComponent.module.css';
-import { useChannel } from './AblyReactEffect';
+import { getChannelHistory, useChannel } from './AblyReactEffect';
 
 const AblyChatComponent = () => {
+  const router = useRouter();
+  const userId = router?.query?.userId || '';
   let inputBox = null;
   let messageEnd = null;
 
@@ -12,12 +15,11 @@ const AblyChatComponent = () => {
 
   const [channel, ably] = useChannel('chat-1234', (message) => {
     const history = receivedMessages.slice(-199);
-    console.log({ receivedMessages, message, history });
     setMessages([...history, message]);
   });
 
   const sendChatMessage = (messageText) => {
-    channel.publish({ name: 'chat-message', data: messageText });
+    channel.publish({ name: 'chat-message', data: messageText, userId });
     setMessageText('');
     inputBox.focus();
   };
@@ -36,7 +38,12 @@ const AblyChatComponent = () => {
   };
 
   const messages = receivedMessages.map((message, index) => {
-    const author = message.connectionId === ably.connection.id ? 'me' : 'other';
+    const author =
+      message?.clientId == userId
+        ? 'me'
+        : message.connectionId === ably.connection.id
+        ? 'me'
+        : 'other';
     return (
       <span key={index} className={styles.message} data-author={author}>
         {message.data}
@@ -45,8 +52,14 @@ const AblyChatComponent = () => {
   });
 
   useEffect(() => {
+    // Fetch and display previous messages
+    getChannelHistory('chat-1234', (messages) => {
+      console.log({ messages });
+      setMessages(messages);
+    });
+
     messageEnd.scrollIntoView({ behaviour: 'smooth' });
-  });
+  }, []);
 
   return (
     <div className={styles.chatHolder}>
