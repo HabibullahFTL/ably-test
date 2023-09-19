@@ -15,6 +15,7 @@ const AblyChatComponent = () => {
 
   const [channel, ably] = useChannel('chat-1234', (message) => {
     const history = receivedMessages.slice(-199);
+    console.log(history);
     setMessages([...history, message]);
   });
 
@@ -59,6 +60,19 @@ const AblyChatComponent = () => {
     });
 
     messageEnd.scrollIntoView({ behaviour: 'smooth' });
+  }, []);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      ably.connection.close();
+    };
+    // Add the 'beforeunload' event listener when the component mounts
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    // Remove the event listener when the component unmounts (cleanup)
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
   }, []);
 
   return (
